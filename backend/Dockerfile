@@ -17,18 +17,19 @@ ENV UV_NO_DEV=1
 # copied from the build image into the final image; see `standalone.Dockerfile`
 # for an example.
 ENV UV_PYTHON_DOWNLOADS=0
+ENV UV_SKIP_WHEEL_FILENAME_CHECK=1
 
 WORKDIR /app
 COPY --from=workspace pyproject.toml uv.lock /app/
 COPY pyproject.toml /app/backend/pyproject.toml
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-workspace --package lms-backend
+    uv sync --no-install-workspace --package lms-backend
 
 COPY . /app/backend
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --package lms-backend
+    uv sync --package lms-backend
 
 RUN /app/.venv/bin/opentelemetry-bootstrap -a install
 
