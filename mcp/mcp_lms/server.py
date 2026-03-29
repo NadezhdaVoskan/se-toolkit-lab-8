@@ -15,6 +15,12 @@ from pydantic import BaseModel, Field
 
 from mcp_lms.client import LMSClient
 
+from mcp_lms.observability import (
+    logs_error_count as vt_logs_error_count,
+    logs_search as vt_logs_search,
+    traces_get as vt_traces_get,
+    traces_list as vt_traces_list,
+)
 _base_url: str = ""
 
 server = Server("lms")
@@ -37,6 +43,31 @@ class _TopLearnersQuery(_LabQuery):
         default=5, ge=1, description="Max learners to return (default 5)."
     )
 
+class _LogsSearchQuery(BaseModel):
+    query: str = Field(
+        default="*",
+        description="LogsQL query, e.g. 'auth_success' or 'resource.service.name:\"Learning Management Service\" AND db_query'.",
+    )
+    limit: int = Field(default=20, ge=1, le=200, description="Max log lines to return.")
+
+
+class _LogsErrorCountQuery(BaseModel):
+    hours: int = Field(default=1, ge=1, le=24, description="Recent time window in hours.")
+    limit: int = Field(
+        default=200, ge=1, le=1000, description="How many recent matching logs to inspect."
+    )
+
+
+class _TracesListQuery(BaseModel):
+    service: str = Field(
+        default="Learning Management Service",
+        description="Service name to search traces for.",
+    )
+    limit: int = Field(default=10, ge=1, le=50, description="Max traces to return.")
+
+
+class _TraceGetQuery(BaseModel):
+    trace_id: str = Field(description="Exact trace ID to fetch.")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -69,6 +100,8 @@ def _text(data: BaseModel | Sequence[BaseModel]) -> list[TextContent]:
         payload = [item.model_dump() for item in data]
     return [TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))]
 
+def _text_any(payload: Any) -> list[TextContent]:
+    return [TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))]
 
 # ---------------------------------------------------------------------------
 # Tool handlers
@@ -111,6 +144,20 @@ async def _completion_rate(args: _LabQuery) -> list[TextContent]:
 async def _sync_pipeline(_args: _NoArgs) -> list[TextContent]:
     return _text(await _client().sync_pipeline())
 
+async def _logs_search(args: _LogsSearchQuery) -> list[TextContent]:
+    return [TextContent(type="text", text=await vt_logs_search(args.query, limit=args.limit))]
+
+
+async def _logs_error_count(args: _LogsErrorCountQuery) -> list[TextContent]:
+    return _text_any(await vt_logs_error_count(hours=args.hours, limit=args.limit))
+
+
+async def _traces_list(args: _TracesListQuery) -> list[TextContent]:
+    return _text_any(await vt_traces_list(service=args.service, limit=args.limit))
+
+
+async def _traces_get(args: _TraceGetQuery) -> list[TextContent]:
+    return _text_any(await vt_traces_get(args.trace_id))
 
 # ---------------------------------------------------------------------------
 # Registry: tool name -> (input model, handler, Tool definition)
@@ -185,6 +232,30 @@ _register(
     _sync_pipeline,
 )
 
+_register(
+    "logs_search",
+    "Search VictoriaLogs with a LogsQL query and return matching log lines.",
+    _LogsSearchQuery,
+    _logs_search,
+)
+_register(
+    "logs_error_count",
+    "Count recent error-like backend log entries and return sample errors.",
+    _LogsErrorCountQuery,
+    _logs_error_count,
+)
+_register(
+    "traces_list",
+    "List recent traces for a service from VictoriaTraces.",
+    _TracesListQuery,
+    _traces_list,
+)
+_register(
+    "traces_get",
+    "Fetch a full trace by exact trace ID from VictoriaTraces.",
+    _TraceGetQuery,
+    _traces_get,
+)
 
 # ---------------------------------------------------------------------------
 # MCP handlers

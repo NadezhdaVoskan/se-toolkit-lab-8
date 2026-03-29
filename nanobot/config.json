@@ -188,11 +188,11 @@
       "apiBase": null,
       "extraHeaders": null
     },
-    "vllm": {
-      "apiKey": "",
-      "apiBase": "",
-      "extraHeaders": null
-    },
+"vllm": {
+  "apiKey": "voskan_qwen-key",
+  "apiBase": "http://qwen-code-api:8080/v1",
+  "extraHeaders": null
+},
     "ollama": {
       "apiKey": "",
       "apiBase": null,
@@ -278,14 +278,17 @@
     },
     "restrictToWorkspace": false,
     "mcpServers": {
-      "lms": {
-        "command": "python",
-        "args": ["-m", "mcp_lms"],
-        "env": {
-          "NANOBOT_LMS_BACKEND_URL": "",
-          "NANOBOT_LMS_API_KEY": ""
-        }
-      }
+	"lms": {
+  "command": "python",
+  "args": ["-m", "mcp_lms"],
+  "env": {
+    "NANOBOT_LMS_BACKEND_URL": "http://backend:8000",
+    "NANOBOT_LMS_API_KEY": "voskan_qwen-key",
+    "NANOBOT_VICTORIA_LOGS_URL": "http://victorialogs:9428",
+    "NANOBOT_VICTORIA_TRACES_URL": "http://victoriatraces:10428"
+  }
+}
+
     }
   }
 }
