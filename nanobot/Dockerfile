@@ -9,6 +9,7 @@ ENV UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
 COPY --from=workspace pyproject.toml uv.lock /app/
 COPY pyproject.toml /app/nanobot/pyproject.toml
+COPY --from=workspace nanobot-websocket-channel /app/nanobot-websocket-channel
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-workspace --package nanobot
