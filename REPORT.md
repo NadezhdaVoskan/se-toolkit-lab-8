@@ -159,7 +159,12 @@ Which lab would you like to see scores for once the LMS is configured?
 
 ## Task 2A — Deployed agent
 
-<!-- Paste a short nanobot startup log excerpt showing the gateway started inside Docker -->
+🐈 Starting nanobot gateway version 0.1.4.post5 on port 18790...
+WebChat channel enabled
+✓ Channels enabled: webchat
+Starting webchat channel...
+MCP server 'lms': connected, 9 tools registered
+Agent loop started
 
 ## Task 2B — Web client
 
